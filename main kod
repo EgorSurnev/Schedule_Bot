@@ -1,0 +1,135 @@
+import telebot
+import datetime
+import pytz
+from telebot import types
+from server import keep_alive
+
+token='BOT TOKEN'
+bot=telebot.TeleBot(token)
+
+# weekdays - словарь с днями недели
+weekdays = {
+    '1': 'Monday',
+    '2': 'Tuesday',
+    '3': 'Wednesday',
+    '4': 'Thursday',
+    '5': 'Friday',
+    '6': 'Saturday'
+    }
+
+# slovar - словарь по дням недели, какой у нас предмет, преподаватель, комната по рассписанию
+slovar = {
+    'Monday':{
+        '1': {'name_lesson':'История','name_teacher':'Метелкина Ж.С.','room':'120','time': '8:00 - 9.35'},
+        '2': {'name_lesson':'Осн.Российской Гос-ти','name_teacher':'','room':'120','time': '9:50 - 11.25'},
+        '3': {'name_lesson':'Ин.яз','name_teacher':'У каждого свой','room':'на 3-м этаже у каждой группы свой','time': '11:55 - 13.30'},
+        '4': {'name_lesson':'Ин.яз','name_teacher':'У каждого свой','room':'на 3-м этаже у каждой группы свой','time': '13:45 - 15.20'},
+        '5': {},
+        '6': {},
+
+        },
+    'Tuesday':{
+        '1': {},
+        '2': {'name_lesson':'Мат.анализ лекция','name_teacher':'Абанин А.В.','room':'212','time': '9:50 - 11.25'},
+        '3': {'name_lesson':'МЛиДМ','name_teacher':'Ерусалимский Я.М.','room':'212','time': '11:55 - 13.30'},
+        '4': {'name_lesson':'Мат.анализ семинар','name_teacher':'Кораблина Ю.В.','room':'310','time': '13:45 - 15.20'},
+        '5': {'name_lesson':'ОА и Прог','name_teacher':'Ширяева Е.В. / Филимонова А.М.','room':'117 / 102','time': '15:50 - 17.25'},
+        '6': {},
+        },
+    'Wednesday':{
+        '1': {'name_lesson':'ЛиТА','name_teacher':'Бабина Д.А.','room':'120','time': '8:00 - 9.35'},
+        '2': {'name_lesson':'ЛиТА - верхняя неделя, Мат.анализ семинар - нижняя','name_teacher':'Перетьяко А.Ю. / Кораблина Ю.В.','room':'304','time': '9:50 - 11.25'},
+        '3': {'name_lesson':'Верхняя неделя - ничего, АиГ - нижняя','name_teacher':'Левенштам В.Б.','room':'304','time': '11:55 - 13.30'},
+        '4': {},
+        '5': {},
+        '6': {},
+        },
+    'Thursday':{
+        '1': {},
+        '2': {'name_lesson':'ОА и Прог','name_teacher':'Филимонова А.М.','room':'117','time': '9:50 - 11.25'},
+        '3': {'name_lesson':'АиГ','name_teacher':'Левенштам В.Б.','room':'211','time': '11:55 - 13.30'},
+        '4': {'name_lesson':'АиГ','name_teacher':'Левенштам В.Б.','room':'206','time': '13:45 - 15.20'},
+        '5': {},
+        '6': {},
+        },
+    'Friday':{
+        '1': {'name_lesson':'ОА и Прог лекция','name_teacher':'Ширяева Е.В.','room':'211','time': '8:00 - 9.35'},
+        '2': {'name_lesson':'ОА и Прог лекция','name_teacher':'Ширяева Е.В.','room':'211','time': '9:50 - 11.25'},
+        '3': {'name_lesson':'Верхняя неделя - ничего, МЛиДМ практика - нижняя','name_teacher':'Скороходов В.А.','room':'305','time': '11:55 - 13.30'},
+        '4': {'name_lesson':'ОА и Прог','name_teacher':'Ширяева Е.В.','room':'117','time': '13:45 - 15.20'},
+        '5': {},
+        '6': {},
+        },
+    'Saturday':{
+        '1': {'name_lesson':'Осн.Российский Гос-ти практика','name_teacher':'Гафитулина Н.Х.','room':'325','time': '8:00 - 9.35'},
+        '2': {'name_lesson':'История практика','name_teacher':'Лобова В.В.','room':'306','time': '9:50 - 11.25'},
+        '3': {},
+        '4': {},
+        '5': {},
+        '6': {},
+        }
+
+    }
+
+#lesson - переменная для определения какая сейчас пара
+lesson	= ''
+time_start_first_lesson = datetime.timedelta(hours = 8,minutes = 0)
+time_end_first_lesson = datetime.timedelta(hours = 9,minutes = 35)
+time_start_second_lesson = datetime.timedelta(hours = 9,minutes = 36)
+time_end_second_lesson = datetime.timedelta(hours = 11,minutes = 25)
+time_start_third_lesson = datetime.timedelta(hours = 11,minutes = 26)
+time_end_third_lesson = datetime.timedelta(hours = 13,minutes = 40)
+time_start_four_lesson = datetime.timedelta(hours = 13,minutes = 41)
+time_end_four_lesson = datetime.timedelta(hours = 15,minutes = 20)
+time_start_fifth_lesson = datetime.timedelta(hours = 15,minutes = 21)
+time_end_fifth_lesson = datetime.timedelta(hours = 17,minutes = 25)
+
+@bot.message_handler(commands=['start'])
+def start_message(message):
+  bot.send_message(message.chat.id,'Привет, для того чтобы появилась кнопка напиши /button')
+
+@bot.message_handler(commands=['button'])
+def button_message(message):
+  markup=types.ReplyKeyboardMarkup(resize_keyboard=True)
+  item1=types.KeyboardButton("Кнопка")
+  markup.add(item1)
+  bot.send_message(message.chat.id,'Выберите что вам надо',reply_markup=markup)
+
+@bot.message_handler(content_types='text')
+def message_reply(message):
+    if message.text=="Кнопка":
+        now_time = datetime.datetime.now(pytz.timezone('Europe/Moscow'))
+        now_time_in_time = now_time.time()
+        currect_time = datetime.timedelta(hours = now_time_in_time.hour, minutes = now_time_in_time.minute )
+        weekday = now_time.weekday()
+        weekday = str(weekday)
+        if time_start_first_lesson <= currect_time <= time_end_first_lesson:
+              lesson = '1'
+        elif time_start_second_lesson <= currect_time <= time_end_second_lesson:
+              lesson = '2'
+        elif time_start_third_lesson <= currect_time <= time_end_third_lesson:
+              lesson = '3'
+        elif time_start_four_lesson <= currect_time <= time_end_four_lesson:
+              lesson = '4'
+        elif time_start_fifth_lesson <= currect_time <= time_end_fifth_lesson:
+              lesson = '5'
+        else:
+              bot.send_message(message.chat.id,'Пора спатки')
+        if not slovar[weekdays[weekday]][lesson] and len(slovar[weekdays[weekday][str(int(lesson)+1)]]) !=0:
+              bot.send_message(message.chat.id,'У вас сейчас окно следующая пара')
+              print(lesson)
+              lesson = str(int(lesson)+1)
+              print(lesson)
+              bot.send_message(message.chat.id,'Преподаватель: %s' % (slovar[weekdays[weekday]][lesson]['name_teacher']))
+              bot.send_message(message.chat.id,'Наименование дисциплины: %s' %(slovar[weekdays[weekday]][lesson]['name_lesson']))
+              bot.send_message(message.chat.id,'Кабинет: %s' %(slovar[weekdays[weekday]][lesson]['room']))
+              bot.send_message(message.chat.id,'Время(во сколько начинается и заканчивается пара): %s' %(slovar[weekdays[weekday]][lesson]['time']))
+        else:
+            bot.send_message(message.chat.id,'Преподаватель: %s' % (slovar[weekdays[weekday]][lesson]['name_teacher']))
+            bot.send_message(message.chat.id,'Наименование дисциплины: %s' %(slovar[weekdays[weekday]][lesson]['name_lesson']))
+            bot.send_message(message.chat.id,'Кабинет: %s' %(slovar[weekdays[weekday]][lesson]['room']))
+            bot.send_message(message.chat.id,'Время(во сколько начинается и заканчивается пара): %s' %(slovar[weekdays[weekday]][lesson]['time']))
+
+keep_alive()
+
+bot.infinity_polling()
